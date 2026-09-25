@@ -1,0 +1,5 @@
+# Never committed: things you want local only
+private/
+.lavish/
+.life/setup-progress.md
+.DS_Store

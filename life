@@ -1,0 +1,98 @@
+#!/usr/bin/env bash
+# Life OS launcher. Plain bash, works on macOS (bash 3.2) and Linux.
+set -eu
+
+ROOT="$(cd "$(dirname "$0")" && pwd)"
+cd "$ROOT"
+
+REVIEW_STAMP=".life/last-weekly-review"
+
+section() { # print the body of a "## <name>" section of a markdown file
+  awk -v h="## $2" '$0 == h {f=1; next} /^## /{f=0} f' "$1" | sed '/^[[:space:]]*$/d'
+}
+
+cmd_status() {
+  echo "=== Life OS · $(date '+%A %Y-%m-%d %H:%M') ==="
+  if [ -f .life/SETUP_NEEDED ]; then
+    echo "Not set up yet. Run /life-architect (Claude Code) to set it up."
+    [ -f .life/setup-progress.md ] && echo "Setup was paused; progress saved in .life/setup-progress.md."
+    return 0
+  fi
+  echo
+  echo "--- Where you stopped (top of current.md) ---"
+  awk '/^## 20[0-9][0-9]-/{n++} n==1' current.md
+  echo
+  if grep -q '^# Queue' queue.md 2>/dev/null; then
+    echo "--- Now ---"
+    section queue.md "Now" | grep -v '^At most' || true
+    waiting="$(section queue.md "Waiting on" | grep '^- ' || true)"
+    if [ -n "$waiting" ]; then echo; echo "--- Waiting on ---"; echo "$waiting"; fi
+    inbox="$(section queue.md "Inbox" | grep -c '^- ' || true)"
+    echo
+    echo "Inbox: ${inbox:-0} unsorted"
+  else
+    echo "--- Queue ---"
+    head -5 queue.md
+  fi
+  if [ -f "$REVIEW_STAMP" ]; then
+    last="$(cat "$REVIEW_STAMP")"
+    days=$(( ( $(date +%s) - last ) / 86400 ))
+    if [ "$days" -ge 7 ]; then echo "Weekly review due (last one ${days} days ago)."; fi
+  else
+    echo "Weekly review: none yet. Run /weekly-review when ready."
+  fi
+}
+
+cmd_add() {
+  [ $# -gt 0 ] || { echo 'usage: ./life add "thing to remember"'; exit 1; }
+  line="- [ ] $* ($(date +%Y-%m-%d))"
+  tmp="$(mktemp)"
+  awk -v l="$line" '
+    /^## / { if (inbox && !done) { print l; print ""; done=1; blanks=0 } inbox = ($0 == "## Inbox") }
+    { if (inbox && $0 ~ /^[[:space:]]*$/) { blanks++; next }
+      while (blanks > 0) { print ""; blanks-- }
+      print }
+    END { if (inbox && !done) { print l; done=1 } if (!done) exit 3 }
+  ' queue.md > "$tmp" || { rm -f "$tmp"; echo "No '## Inbox' section in queue.md; add one first."; exit 1; }
+  mv "$tmp" queue.md
+  echo "Captured to Inbox: $*"
+}
+
+cmd_reviewed() {
+  mkdir -p .life
+  date +%s > "$REVIEW_STAMP"
+  echo "Weekly review stamped for $(date +%Y-%m-%d)."
+}
+
+cmd_check() {
+  ok=1
+  for f in AGENTS.md CLAUDE.md context.md current.md queue.md; do
+    [ -f "$f" ] || { echo "missing: $f"; ok=0; }
+  done
+  if [ ! -f .life/SETUP_NEEDED ]; then
+    left="$(grep -rln '{{' context.md current.md queue.md areas/*/README.md 2>/dev/null || true)"
+    [ -z "$left" ] || { echo "placeholders left in:"; echo "$left" | sed 's/^/  /'; ok=0; }
+    grep -q 'Not set up yet' AGENTS.md && { echo "AGENTS.md: 'About the person' section still empty"; ok=0; }
+  fi
+  if git remote get-url origin >/dev/null 2>&1; then
+    echo "reminder: this repo has a remote ($(git remote get-url origin)). Make sure it is private."
+  fi
+  [ "$ok" = 1 ] && echo "Life OS check: all good."
+  [ "$ok" = 1 ]
+}
+
+case "${1:-status}" in
+  status|"") cmd_status ;;
+  add) shift; cmd_add "$@" ;;
+  reviewed) cmd_reviewed ;;
+  check) cmd_check ;;
+  help|-h|--help)
+    cat <<'HELP'
+./life status          where you stopped, today's Now, waiting-on, inbox count
+./life add "thing"     capture to the Inbox in queue.md
+./life reviewed        stamp the weekly review as done
+./life check           find missing files and unfilled placeholders
+HELP
+    ;;
+  *) echo "unknown command: $1 (try ./life help)"; exit 1 ;;
+esac
