@@ -14,7 +14,7 @@ section() { # print the body of a "## <name>" section of a markdown file
 cmd_status() {
   echo "=== Life OS · $(date '+%A %Y-%m-%d %H:%M') ==="
   if [ -f .life/SETUP_NEEDED ]; then
-    echo "Not set up yet. Run /life-architect (Claude Code) to set it up."
+    echo "Not set up yet. Type /life-architect in Claude Code or OpenCode to set it up."
     [ -f .life/setup-progress.md ] && echo "Setup was paused; progress saved in .life/setup-progress.md."
     return 0
   fi
@@ -70,7 +70,7 @@ cmd_check() {
     [ -f "$f" ] || { echo "missing: $f"; ok=0; }
   done
   if [ ! -f .life/SETUP_NEEDED ]; then
-    left="$(grep -rln '{{' context.md current.md queue.md areas/*/README.md 2>/dev/null || true)"
+    left="$(grep -rlnF '{{' context.md current.md queue.md areas/*/README.md 2>/dev/null || true)"
     [ -z "$left" ] || { echo "placeholders left in:"; echo "$left" | sed 's/^/  /'; ok=0; }
     grep -q 'Not set up yet' AGENTS.md && { echo "AGENTS.md: 'About the person' section still empty"; ok=0; }
   fi

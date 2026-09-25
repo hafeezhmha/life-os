@@ -10,7 +10,7 @@ Nothing to install beyond the agent. It is all plain text you own.
 ## What you need
 
 - [Claude Code](https://claude.com/claude-code) or [OpenCode](https://opencode.ai), with a model account (Claude plan, API key, or any provider OpenCode supports).
-- macOS or Linux. On Windows, use WSL.
+- macOS or Linux, same steps on both. On a new Mac, `git` asks to install the Command Line Tools the first time; say yes. On Windows, use WSL.
 - Git, and a GitHub account to hold your private copy.
 
 ## Start in 3 steps (about 20 minutes)
