@@ -7,6 +7,12 @@ It is built from a real AI-native software workflow: the same files and rituals
 that let an agent pick up a codebase cold every morning, repointed at a life.
 Nothing to install beyond the agent. It is all plain text you own.
 
+## What you need
+
+- [Claude Code](https://claude.com/claude-code) with a Claude plan or API key.
+- macOS or Linux. On Windows, use WSL.
+- Git, and a GitHub account to hold your private copy.
+
 ## Start in 3 steps (about 20 minutes)
 
 1. Use this template to create your own repo on GitHub, and **make it
