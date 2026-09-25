@@ -10,8 +10,13 @@ the `life-architect` skill during setup.
 
 ## Session start protocol
 
-Every session, before anything else, in this order:
+Every session, before anything else, in this order. In Claude Code a
+SessionStart hook already printed the output of steps 0 and 3; use it rather
+than repeating them. Other agents (OpenCode, Codex…) have no hook: do every
+step yourself on the first message of the session, whatever that message is.
 
+0. If `.claude/.adhd-always` exists, read `.claude/skills/i-have-adhd/SKILL.md`
+   and apply its rules to every reply this session.
 1. If `.life/SETUP_NEEDED` exists, the system is not set up. Greet the person,
    say in two lines what Life OS does, and offer to run the `life-architect`
    skill. If `.life/setup-progress.md` exists, offer to resume from it instead.
